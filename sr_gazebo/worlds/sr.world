@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
-<sdf version="1.4">
+<sdf version="1.6">
   <world name="default">
+
+    <gravity>0.0 0.0 0.0</gravity>
+
     <include>
       <uri>model://ground_plane</uri>
     </include>
@@ -8,14 +11,11 @@
       <uri>model://sun</uri>
     </include>
 
+    <!-- <include>
+      <uri>model://own_sr_hand</uri>
+      <pose>0.0 0.0 0 0 0 0</pose>
+    </include> -->
 
 
   </world>
 </sdf>
-
-<!-- <include>
-  <!-- <uri>model://gas_station</uri> -->
-  <uri>model://own_sr_hand</uri>
-  <name>ShadowRobot Hand</name>
-  <pose>0.0 0.0 0 0 0 0</pose>
-</include> -->

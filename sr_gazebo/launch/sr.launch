@@ -3,8 +3,14 @@
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find sr_gazebo)/worlds/sr.world"/>
     <!-- more default parameters can be changed here -->
+    <arg name="paused" value="false"/>
   </include>
 
-  <!-- Spawn a robot into Gazebo -->
-<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find sr_description)/urdf/sr_hand.urdf -urdf -z 1 -model my_robot" />
+<!-- Convert an xacro and put on parameter server -->
+<param name="robot_description" command="$(find xacro)/xacro.py $(find sr_description)/urdf/sr_hand.xacro" />
+
+<!-- Spawn a robot into Gazebo -->
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -z 1 -model shadowhand_motor" />
+
+
 </launch>
