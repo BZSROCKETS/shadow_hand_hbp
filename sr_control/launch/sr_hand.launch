@@ -1,0 +1,13 @@
+<launch>
+
+  <param name="robot_description" textfile="$(find sr_description)/urdf/sr_hand.xacro"/>
+
+  <rosparam file="$(find sr_control)/config/manual_ros_controllers_position.yaml" command="load"/>
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" ns="/shadowhand_motor" args="rh_WRJ2_position_controller rh_WRJ1_position_controller rh_FFJ4_position_controller rh_FFJ3_position_controller rh_FFJ2_position_controller rh_FFJ1_position_controller rh_LFJ5_position_controller rh_LFJ4_position_controller rh_LFJ3_position_controller rh_LFJ2_position_controller rh_LFJ1_position_controller rh_MFJ4_position_controller rh_MFJ3_position_controller rh_MFJ2_position_controller rh_MFJ1_position_controller rh_RFJ4_position_controller rh_RFJ3_position_controller rh_RFJ2_position_controller rh_RFJ1_position_controller rh_THJ5_position_controller rh_THJ4_position_controller rh_THJ3_position_controller rh_THJ2_position_controller rh_THJ1_position_controller joint_state_controller"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+    respawn="false" output="screen">
+    <remap from="/joint_states" to="/shadowhand_motor/joint_states" />
+  </node>
+</launch>
