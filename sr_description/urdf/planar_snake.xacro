@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="snake">
+
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/planar_snake</robotNamespace>
+		</plugin>
+	</gazebo>
+
+	<!-- Car Body parameter -->
+	<xacro:property name="length" value="0.25" />
+	<xacro:property name="width" value="0.1" />
+	<xacro:property name="height" value="0.1" />
+	<xacro:property name="origin_heigth" value="0.08" />
+	
+	<!-- Wheel parameter -->
+	<xacro:property name="wheel_radius" value="0.05" />
+	<xacro:property name="wheel_length" value="0.02" />
+	<xacro:property name="wheelOrigY" value="${(width+wheel_length)/2+0.002}" />
+
+	<!-- Wheel macro, used in the module macro -->
+	<xacro:macro name="wheel" params="pos idx">
+		<link name="wheel_${pos}_${idx}">
+		  <collision>
+		    <origin xyz="0 0 0" rpy="0 ${pi/2} ${pi/2}"/>
+		    <geometry>
+		      <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+		    </geometry>
+		  </collision>
+
+		  <visual>
+		    <origin xyz="0 0 0" rpy="0 ${pi/2} ${pi/2}"/>
+		    <geometry>
+		      <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+		    </geometry>
+		  </visual>
+
+		  <inertial>
+		    <origin xyz="0 0 0" rpy="0 ${pi/2} ${pi/2}"/>
+		    <mass value="1"/>
+		    <inertia
+		      ixx="1.0" ixy="0.0" ixz="0.0"
+		      iyy="1.0" iyz="0.0"
+		      izz="1.0"/>
+		  </inertial>
+		</link>
+		
+		<gazebo reference="wheel_${pos}_${idx}">
+		  <mu1>1.5</mu1>
+		  <mu2>1.5</mu2>
+		</gazebo>
+
+	</xacro:macro>
+	
+	<!-- Caster macro, used in the module macro -->
+	<xacro:macro name="caster" params="pos idx">
+		<link name="caster_${pos}_${idx}">
+		  <visual>
+		    <origin xyz="0 0 0" rpy="0 0 0"/>
+		    <geometry>
+		      <sphere radius="${wheel_radius}"/>
+		    </geometry>
+		  </visual>
+
+		  <inertial>
+		    <origin xyz="0 0 0" rpy="0 0 0"/>
+		    <mass value="1"/>
+		    <inertia
+		      ixx="1.0" ixy="0.0" ixz="0.0"
+		      iyy="1.0" iyz="0.0"
+		      izz="1.0"/>
+		  </inertial>
+		</link>
+	</xacro:macro>
+	
+	<!-- Module macro -->
+	<xacro:macro name="module" params="idx">
+		<link name="car_${idx}">
+		  <collision>
+		    <origin xyz="-${length/2+wheel_radius} 0 ${origin_heigth}" rpy="0 0 0"/>
+		    <geometry>
+		      <box size="${length} ${width} ${height}"/>
+		    </geometry>
+		  </collision>
+
+		  <visual>
+		    <origin xyz="-${length/2+wheel_radius} 0 ${origin_heigth}" rpy="0 0 0"/>
+		    <geometry>
+		      <box size="${length} ${width} ${height}"/>
+		    </geometry>
+		  </visual>
+
+		  <inertial>
+		    <origin xyz="-${length/2+wheel_radius} 0 ${origin_heigth}" rpy="0 0 0"/>
+		    <mass value="1"/>
+		    <inertia
+		      ixx="1.0" ixy="0.0" ixz="0.0"
+		      iyy="1.0" iyz="0.0"
+		      izz="1.0"/>
+		  </inertial>
+		</link>
+		
+		<xacro:wheel pos="left"  idx="${idx}" />
+		<xacro:wheel pos="right" idx="${idx}" />
+		
+		<xacro:caster pos="front" idx="${idx}" />
+		<xacro:caster pos="back"  idx="${idx}" />
+		
+		<joint name="leftJoint_${idx}" type="continuous">
+		  <parent link="car_${idx}"/>
+		  <child link="wheel_left_${idx}"/>
+		  <origin xyz="-${length/2+wheel_radius} ${wheelOrigY} ${wheel_radius}" rpy="0 0 0"/>
+		  <axis xyz="0 1 0"/>
+		</joint>
+		<joint name="rightJoint_${idx}" type="continuous">
+		  <parent link="car_${idx}"/>
+		  <child link="wheel_right_${idx}"/>
+		  <origin xyz="-${length/2+wheel_radius} -${wheelOrigY} ${wheel_radius}" rpy="0 0 0"/>
+		  <axis xyz="0 1 0"/>
+		</joint>
+		
+		<joint name="frontJoint_${idx}" type="fixed">
+		  <parent link="car_${idx}"/>
+		  <child link="caster_front_${idx}"/>
+		  <origin xyz="-${wheel_radius} 0 ${origin_heigth}" rpy="0 0 0"/>
+		</joint>
+		<joint name="backJoint_${idx}" type="fixed">
+		  <parent link="car_${idx}"/>
+		  <child link="caster_back_${idx}"/>
+		  <origin xyz="-${length+wheel_radius} 0 ${origin_heigth}" rpy="0 0 0"/>
+		</joint>
+		
+	</xacro:macro>
+	
+	<!-- Module-joint macro, for linking two modules -->
+	<xacro:macro name="coupling" params="idx">
+		<joint name="joint_${idx}" type="revolute">
+		  <parent link="car_${idx}"/>
+		  <child link="car_${idx+1}"/>
+		  <origin xyz="-${(length+2*wheel_radius)} 0 0" rpy="0 0 0"/>
+		  <limit effort="1000.0" lower="-${pi/2}" upper="${pi/2}" velocity="50"/>
+		  <axis xyz="0 0 1"/>
+		</joint>
+		<transmission name="trans_${idx}">
+		  <type>transmission_interface/SimpleTransmission</type>
+		  <joint name="joint_${idx}">
+		    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+		  </joint>
+		  <actuator name="motor_${idx}">
+		    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+		    <mechanicalReduction>1</mechanicalReduction>
+		  </actuator>
+		</transmission>
+	</xacro:macro>
+	
+	
+	<!-- Used for fixing robot to Gazebo 'base_link' -->
+  <link name="base_link"/>
+
+	<joint name="fixed" type="fixed">
+	  <parent link="base_link"/>
+	  <child link="car_1"/>
+	</joint>
+	
+	
+	<!-- insertion of the modules -->
+	<xacro:module idx="1" />
+	<xacro:module idx="2" />
+	<xacro:module idx="3" />
+	<xacro:module idx="4" />
+	<xacro:module idx="5" />
+	<xacro:module idx="6" />
+	<xacro:module idx="7" />
+	<xacro:module idx="8" />
+	<xacro:module idx="9" />
+	
+	<!-- linkage of the modules -->
+	<xacro:coupling idx="1" />
+	<xacro:coupling idx="2" />
+	<xacro:coupling idx="3" />
+	<xacro:coupling idx="4" />
+	<xacro:coupling idx="5" />
+	<xacro:coupling idx="6" />
+	<xacro:coupling idx="7" />
+	<xacro:coupling idx="8" />
+
+</robot>
